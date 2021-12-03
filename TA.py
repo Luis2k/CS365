@@ -39,7 +39,11 @@ class SimpleMovingAverages(object):
         '''
         result = None
         #TODO
+        self.period = period
+        self.price_source = price_source
+        result = self.ohlcv_df[price_source].rolling(period).mean()
         #end TODO
+        
         return(result)
         
     def run(self, price_source = 'close'):
@@ -69,7 +73,9 @@ class ExponentialMovingAverages(object):
         '''
         result = None
         #TODO: implement details here
+        result = self.ohlcv_df['close'].ewm(span=period, adjust=False).mean()
         #end TODO
+        
         return(result)
         
     def run(self):
@@ -99,6 +105,15 @@ class RSI(object):
         '''
         #TODO: implement details here
         # self.rsi = ...
+        #lower & higher closes
+        up = df['close'].diff().clip(lower=0)
+        down = -1 * df['close'].diff().clip(upper=0)
+        
+        ma_up = up.ewm(com = period - 1, adjust = True, min_period = period).mean()
+        ma_down = down.ewm(com = period - 1, adjust = True, min_period = period).mean()
+        self.rsi = ma_up/ ma_down
+        rsi = 100 - (100/(1+rsi))
+        
         #end TODO
 
 class VWAP(object):
@@ -115,8 +130,13 @@ class VWAP(object):
         calculate VWAP
         '''
         #TODO: implement details here
+        v = df['volume'].values
+        tp = (df['low']+df['close']+df['high']).div(3).values
         #end TODO
-
+        
+        return df.assign(vwap = (tp * v).cumsum()/v.cumsum())
+        #price = (self.ohlcv_df['high'] + self.ohlcv_df['low'] + self.ohlcv_df['close']) / 3
+        #self.vwap = ((self.ohlcv_df['volume'] * price).cumsum()) / self.ohlcv_df['volume'].cumsum()
 
 
 def _test():
